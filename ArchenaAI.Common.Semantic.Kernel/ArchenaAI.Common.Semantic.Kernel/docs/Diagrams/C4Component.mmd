@@ -1,0 +1,18 @@
+﻿```mermaid
+C4Component
+    Container_Boundary(kernel, "ArchenaAI Semantic Kernel") {
+        Component(kernelClass, "ArchenaKernel", "C#", "Core orchestrator and entry point.")
+        Component(memoryMgr, "MemoryManager", "C#", "Manages symbolic and vector stores.")
+        Component(skillRegistry, "SkillRegistry", "C#", "Registers and retrieves skills dynamically.")
+        Component(pipelineExec, "PipelineExecutor", "C#", "Runs behaviors in sequence using Franz Mediator style.")
+        Component(connectors, "Connectors", "C#", "Provide I/O for LLMs, Kafka, HTTP, and CLI tools.")
+    }
+
+    Rel(kernelClass, pipelineExec, "Executes operations through")
+    Rel(kernelClass, memoryMgr, "Reads/Writes memory")
+    Rel(kernelClass, skillRegistry, "Invokes registered skills")
+    Rel(pipelineExec, franzMediator, "Uses Franz Mediator behaviors")
+    Rel(connectors, externalLLM, "Integrates external reasoning models")
+```
+
+

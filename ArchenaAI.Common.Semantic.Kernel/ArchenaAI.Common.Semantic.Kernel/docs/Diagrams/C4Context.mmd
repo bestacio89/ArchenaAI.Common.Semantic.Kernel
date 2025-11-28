@@ -1,0 +1,13 @@
+﻿```mermaid
+C4Context
+    Person(user, "Developer", "Builds and maintains AI Agents")
+    System(kernel, "ArchenaAI Semantic Kernel", "Provides memory, skills, pipelines, and connectors for all AI agents.")
+    System_Ext(franz, "Franz Framework", "Provides dependency injection, mediation, logging, and messaging foundation.")
+    System_Ext(openai, "External LLM Providers", "OpenAI, Ollama, Azure OpenAI, etc.")
+    System_Ext(kafka, "Messaging Infrastructure", "Handles asynchronous communication between agents.")
+    
+    Rel(user, kernel, "Implements and runs agents using")
+    Rel(kernel, franz, "Uses Franz Common components")
+    Rel(kernel, openai, "Invokes for reasoning and planning")
+    Rel(kernel, kafka, "Publishes and consumes events")
+```

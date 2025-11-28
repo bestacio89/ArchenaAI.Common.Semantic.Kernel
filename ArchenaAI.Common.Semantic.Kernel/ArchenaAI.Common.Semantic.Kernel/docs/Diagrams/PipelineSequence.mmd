@@ -1,0 +1,18 @@
+﻿```mermaid
+sequenceDiagram
+    participant Dev as Developer / Agent
+    participant Kernel as ArchenaKernel
+    participant Pipeline as PipelineExecutor
+    participant Skill as SkillRegistry
+    participant Memory as MemoryManager
+    participant LLM as LLMConnector
+
+    Dev->>Kernel: Submit reasoning request ("Analyze context X")
+    Kernel->>Pipeline: Build execution pipeline
+    Pipeline->>Skill: Invoke ReasoningSkill
+    Skill->>LLM: Call external model (OpenAI / Ollama)
+    LLM-->>Skill: Return inference result
+    Skill->>Memory: Store outcome (summary, embeddings)
+    Memory-->>Kernel: Confirm persistence
+    Kernel-->>Dev: Return processed response
+```

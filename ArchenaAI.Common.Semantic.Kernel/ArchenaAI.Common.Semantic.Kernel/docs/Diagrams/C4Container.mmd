@@ -1,0 +1,18 @@
+﻿```mermaid
+C4Container
+    System_Boundary(kernel, "ArchenaAI Semantic Kernel") {
+        Container(core, "ArchenaKernel", "C#", "Central orchestrator managing memory, pipelines, and skills.")
+        Container(memory, "Memory Module", "C#", "Manages symbolic and vector memory.")
+        Container(pipelines, "Pipeline Module", "C#", "Executes operations through layered behaviors (logging, resilience, validation).")
+        Container(skills, "Skills Module", "C#", "Hosts reasoning, reflection, and planning capabilities.")
+        Container(connectors, "Connectors Module", "C#", "Bridges to LLMs, Kafka, HTTP APIs, and CLI tools.")
+    }
+
+    Person(dev, "Agent Developer")
+    System_Ext(franz, "Franz Framework", "Provides DI, logging, and mediator foundation.")
+    System_Ext(openai, "LLM APIs", "External reasoning providers.")
+
+    Rel(dev, core, "Extends and uses via dependency injection")
+    Rel(core, franz, "Registers dependencies and behaviors")
+    Rel(core, openai, "Calls for AI inference")
+```
