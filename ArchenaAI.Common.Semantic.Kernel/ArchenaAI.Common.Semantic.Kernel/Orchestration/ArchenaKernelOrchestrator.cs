@@ -5,13 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using ArchenaAI.Common.Semantic.Kernel.Skills;
 using ArchenaAI.Common.Semantic.Kernel.Memory.Contracts;
+using ArchenaAI.Common.Semantic.Kernel.Actions;
+using ArchenaAI.Common.Semantic.Kernel.Planning;
 
 namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
 {
     /// <summary>
-    /// High-level orchestrator implementing reasoning, reflection, planning,
-    /// and memory-augmented loops, while broadcasting semantic events
-    /// via the distributed SemanticOrchestrator.
+    /// High-level orchestrator implementing reasoning, reflection, correction,
+    /// tool-calling, planning, and memory-augmented loops, while broadcasting
+    /// semantic events through the distributed SemanticOrchestrator.
     /// </summary>
     public sealed class ArchenaKernelOrchestrator
     {
@@ -19,17 +21,20 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
         private readonly IMemoryManager _memory;
         private readonly ISkillRegistry _skills;
         private readonly SemanticOrchestrator _semanticBus;
+        private readonly LLMActionPlanner _actionPlanner;
 
         public ArchenaKernelOrchestrator(
             IArchenaKernel kernel,
             IMemoryManager memory,
             ISkillRegistry skills,
-            SemanticOrchestrator semanticBus)
+            SemanticOrchestrator semanticBus,
+            LLMActionPlanner actionPlanner)
         {
             _kernel = kernel;
             _memory = memory;
             _skills = skills;
             _semanticBus = semanticBus;
+            _actionPlanner = actionPlanner;
         }
 
         // ------------------------------------------------------------
@@ -42,6 +47,7 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
         {
             string current = input;
             string? last = null;
+            string correlationId = Guid.NewGuid().ToString();
 
             // Emit initial event
             await _semanticBus.EmitReasoningEventAsync(
@@ -51,7 +57,9 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
 
             for (int i = 0; i < options.MaxIterations; i++)
             {
+                // ------------------------------------------------------------
                 // Memory retrieval
+                // ------------------------------------------------------------
                 if (options.UseMemory)
                 {
                     var memories = await _memory.SearchAsync(current, 3, ct);
@@ -61,22 +69,47 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
                         current = $"Context:\n{context}\n\nUser Input:\n{current}";
                 }
 
-                // Emit event: reasoning-pass
+                // Event: reasoning pass
                 await _semanticBus.EmitReasoningEventAsync(
                     skill: "reasoning.pass",
                     content: current,
                     ct);
 
-                // Execute reasoning step
-                string reasoning = await _kernel.ExecuteSkillAsync("reasoning", current, ct);
+                // ------------------------------------------------------------
+                // Reasoning step
+                // ------------------------------------------------------------
+                string reasoning = await _kernel.ExecuteSkillAsync(
+                    skillName: "reasoning",
+                    input: current,
+                    ct);
 
-                // Emit event: reasoning-output
                 await _semanticBus.EmitReasoningEventAsync(
                     skill: "reasoning.output",
                     content: reasoning,
                     ct);
 
+                // ------------------------------------------------------------
+                // TOOL CALLING PHASE (NEW)
+                // ------------------------------------------------------------
+                var toolOutput = await _actionPlanner.ProcessAsync(
+                    llmResponse: reasoning,
+                    correlationId: correlationId,
+                    ct: ct);
+
+                if (toolOutput != reasoning)
+                {
+                    // Tool call executed → override reasoning output
+                    reasoning = toolOutput;
+
+                    await _semanticBus.EmitReasoningEventAsync(
+                        skill: "action.executed",
+                        content: reasoning,
+                        ct);
+                }
+
+                // ------------------------------------------------------------
                 // Reflection step
+                // ------------------------------------------------------------
                 if (options.UseReflection)
                 {
                     string reflection = await _kernel.ExecuteSkillAsync("reflection", reasoning, ct);
@@ -89,7 +122,9 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
                     reasoning = reflection;
                 }
 
+                // ------------------------------------------------------------
                 // Correction step
+                // ------------------------------------------------------------
                 if (options.UseCorrection)
                 {
                     string correction = await _kernel.ExecuteSkillAsync("correction", reasoning, ct);
@@ -102,7 +137,9 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
                     reasoning = correction;
                 }
 
-                // Termination criteria
+                // ------------------------------------------------------------
+                // Termination conditions
+                // ------------------------------------------------------------
                 if (ShouldTerminate(reasoning, options))
                 {
                     await _semanticBus.EmitReasoningEventAsync(
@@ -127,6 +164,7 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
                 current = reasoning;
             }
 
+            // Max iteration fallback
             await _semanticBus.EmitReasoningEventAsync(
                 skill: "reasoning.max_iterations",
                 content: last ?? input,
@@ -159,6 +197,9 @@ namespace ArchenaAI.Common.Semantic.Kernel.Orchestration
             return summary;
         }
 
+        // ------------------------------------------------------------
+        // Termination helper
+        // ------------------------------------------------------------
         private bool ShouldTerminate(string output, LoopOptions opt)
         {
             if (string.IsNullOrWhiteSpace(output))
