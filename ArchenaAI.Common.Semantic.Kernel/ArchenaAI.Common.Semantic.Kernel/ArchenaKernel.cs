@@ -1,7 +1,10 @@
-﻿using System;
+﻿using ArchenaAI.Common.Semantic.Kernel.Connectors.LLM;
+using ArchenaAI.Common.Semantic.Kernel.Memory.Contracts;
+using ArchenaAI.Common.Semantic.Kernel.Pipelines;
+using ArchenaAI.Common.Semantic.Kernel.Skills;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ArchenaAI.Common.Semantic.Kernel.Skills;
 
 namespace ArchenaAI.Common.Semantic.Kernel
 {
@@ -13,11 +16,20 @@ namespace ArchenaAI.Common.Semantic.Kernel
     public sealed class ArchenaKernel : IArchenaKernel
     {
         private readonly ISkillRegistry _skillRegistry;
+        private readonly IPipelineExecutor _pipeline;
+        private readonly ILLMConnector _connector;
+        private readonly IMemoryManager _memory;
 
-        public ArchenaKernel(ISkillRegistry skillRegistry)
+        public ArchenaKernel(
+            ISkillRegistry skills,
+            IPipelineExecutor pipeline,
+            ILLMConnector connector,
+            IMemoryManager memory)
         {
-            _skillRegistry = skillRegistry
-                ?? throw new ArgumentNullException(nameof(skillRegistry));
+            _skillRegistry = skills;
+            _pipeline = pipeline;
+            _connector = connector;
+            _memory = memory;
         }
 
         // --------------------------------------------------------------------
@@ -50,7 +62,7 @@ namespace ArchenaAI.Common.Semantic.Kernel
 
             var result = await _skillRegistry.ExecuteAsync(skillName, context, ct);
 
-            return result.Output?.ToString()?? string.Empty;
+            return result.Output?.ToString() ?? string.Empty;
         }
 
         // --------------------------------------------------------------------
