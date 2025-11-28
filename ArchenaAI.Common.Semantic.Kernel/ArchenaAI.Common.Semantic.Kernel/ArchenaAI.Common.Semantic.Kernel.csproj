@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 🧩 Centralized configuration -->
+  <Import Project="$(MSBuildThisFileDirectory)build/version.props" Condition="Exists('$(MSBuildThisFileDirectory)build/version.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)build/Directory.Build.Props" Condition="Exists('$(MSBuildThisFileDirectory)build/Directory.Build.Props')" />
+
+
+  <PropertyGroup>
+    <!-- ✅ These are project-unique details -->
+    <PackageId>ArchenaAI.Common.SemanticKernel</PackageId>
+    <Description>Common semantic kernel library for ArchenaAI agents. Powered by the Franz Framework.</Description>
+    <RepositoryUrl>https://dev.azure.com/AjnaTellus/ArchenaAI/_git/ArchenaAI.Common.SemanticKernel</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- 📦 Package publishing -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <!-- 🧩 Franz Framework dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Franz.Common" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Business" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Mediator" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Mediator.Polly" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Mediator.OpenTelemetry" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Logging" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Caching" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Messaging" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Messaging.Kafka" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Http" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Http.Refit" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.Hosting" Version="1.6.21" />
+    <PackageReference Include="Franz.Common.DependencyInjection" Version="1.6.21" />
+  </ItemGroup>
+
+  <!-- ⚙️ Support dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Polly" Version="8.6.5" />
+    <PackageReference Include="System.Threading.Channels" Version="10.0.0" />
+    <PackageReference Include="System.Text.Json" Version="10.0.0" />
+    <PackageReference Include="Volo.Abp.Core" Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- 🧪 Testing dependencies (handled automatically in Debug mode) -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="FluentAssertions" Version="8.8.0" />
+  </ItemGroup>
+
+  <!-- 📘 Documentation & build artifacts -->
+  <ItemGroup>
+    <None Include="docs\**\*" Pack="true" PackagePath="docs" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+ 
+  <Target Name="DebugPrintProps" BeforeTargets="BeforeBuild">
+    <Message Text="TFM: $(TargetFramework)" Importance="High" />
+    <Message Text="SolutionDir: $(SolutionDir)" Importance="High" />
+  </Target>
+</Project>

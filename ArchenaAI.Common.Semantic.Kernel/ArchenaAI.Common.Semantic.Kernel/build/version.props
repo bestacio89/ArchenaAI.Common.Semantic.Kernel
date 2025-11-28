@@ -1,0 +1,52 @@
+﻿<Project>
+
+  <!-- 🧩 Centralized Version Management -->
+  <PropertyGroup>
+    <!-- Core Semantic Versioning -->
+    <VersionMajor>1</VersionMajor>
+    <VersionMinor>0</VersionMinor>
+    <VersionPatch>0</VersionPatch>
+    <VersionSuffix>alpha</VersionSuffix>
+
+    <!-- Derived Versions -->
+    <Version>$(VersionMajor).$(VersionMinor).$(VersionPatch)-$(VersionSuffix)</Version>
+    <PackageVersion>$(Version)</PackageVersion>
+    <AssemblyVersion>$(VersionMajor).0.0.0</AssemblyVersion>
+    <FileVersion>$(VersionMajor).$(VersionMinor).$(VersionPatch).0</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+
+  <!-- 🧰 Franz & External Dependencies Version Pinning -->
+  <PropertyGroup>
+    <FranzVersion>1.6.2</FranzVersion>
+    <PollyVersion>8.6.4</PollyVersion>
+    <XunitVersion>2.8.1</XunitVersion>
+    <MoqVersion>4.20.70</MoqVersion>
+    <FluentAssertionsVersion>6.12.0</FluentAssertionsVersion>
+  </PropertyGroup>
+
+  <!-- 🏗️ Global Package Overrides (applied during build/restore) -->
+  <ItemGroup>
+    <PackageVersion Include="Franz.Common" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Business" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.DependencyInjection" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Mediator" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Mediator.Polly" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Mediator.OpenTelemetry" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Logging" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Caching" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Messaging" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Messaging.Kafka" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Http" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Http.Refit" Version="$(FranzVersion)" />
+    <PackageVersion Include="Franz.Common.Hosting" Version="$(FranzVersion)" />
+  </ItemGroup>
+
+  <!-- 🚀 CI/CD Version Override (optional for pipelines) -->
+  <PropertyGroup Condition="'$(BUILD_BUILDNUMBER)' != ''">
+    <InformationalVersion>$(BUILD_BUILDNUMBER)</InformationalVersion>
+    <VersionSuffix></VersionSuffix>
+    <Version>$(BUILD_BUILDNUMBER)</Version>
+  </PropertyGroup>
+
+</Project>
