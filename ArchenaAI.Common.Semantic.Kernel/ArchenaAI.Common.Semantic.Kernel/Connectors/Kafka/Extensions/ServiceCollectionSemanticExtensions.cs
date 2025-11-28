@@ -23,7 +23,7 @@ namespace ArchenaAI.Common.Semantic.Kernel.Connectors.Kafka.Extensions
         public static IServiceCollection AddSemanticMessaging(this IServiceCollection services, IConfiguration configuration)
         {
             // ✅ Register Franz Kafka foundation (producers, consumers, models)
-            services.AddMessaging(configuration);
+            services.AddKafkaMessaging(configuration);
 
             // ✅ Add the semantic Kafka connector (high-level adapter)
             services.AddNoDuplicateScoped<IKafkaConnector, KafkaConnector>();

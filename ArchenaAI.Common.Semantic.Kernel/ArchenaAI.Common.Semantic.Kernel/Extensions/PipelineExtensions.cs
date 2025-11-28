@@ -1,12 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
+using ArchenaAI.Common.Semantic.Kernel.Pipelines;
+using ArchenaAI.Common.Semantic.Kernel.Pipelines.Behaviours;
 
 namespace ArchenaAI.Common.Semantic.Kernel.Extensions
 {
-    public class PipelineExtensions
+    public static class PipelineExtensions
     {
+        /// <summary>
+        /// Registers all default Semantic Kernel pipeline behaviors.
+        /// Order is important: first registered = outermost behavior.
+        /// </summary>
+        public static IServiceCollection AddSemanticKernelPipeline(this IServiceCollection services)
+        {
+            // Core behaviors
+            services.AddSingleton<IKernelPipelineBehavior, LoggingBehavior>();
+            services.AddSingleton<IKernelPipelineBehavior, ResilienceBehavior>();
+
+            // Memory behaviors
+            services.AddSingleton<IKernelPipelineBehavior, SymbolicMemoryKernelBehavior>();
+            services.AddSingleton<IKernelPipelineBehavior, VectorMemoryKernelBehavior>();
+
+            // Pipeline executor
+            services.AddSingleton<IPipelineExecutor, PipelineExecutor>();
+
+            return services;
+        }
     }
 }

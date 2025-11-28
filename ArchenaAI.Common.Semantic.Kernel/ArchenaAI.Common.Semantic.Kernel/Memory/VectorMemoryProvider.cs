@@ -1,58 +1,55 @@
 ﻿using ArchenaAI.Common.Semantic.Kernel.Memory.Contracts;
 using ArchenaAI.Common.Semantic.Kernel.Memory.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace ArchenaAI.Common.Semantic.Kernel.Memory
 {
-    /// <summary>
-    /// Provides vector embeddings for text content using an external model endpoint (LLM or embedding API).
-    /// </summary>
     public sealed class VectorMemoryProvider : IVectorMemoryProvider
     {
+        private const string DefaultModel = "text-embedding-3-large";
+
         private readonly HttpClient _http;
         private readonly ILogger<VectorMemoryProvider> _logger;
+        private readonly string _modelName;
 
-        // Temporary in-memory vector store (until replaced by a vector DB)
-        private readonly Dictionary<string, MemoryRecord> _store = new();
+        private readonly ConcurrentDictionary<string, MemoryRecord> _store = new();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VectorMemoryProvider"/> class.
-        /// </summary>
-        /// <param name="http">The HTTP client used for external embedding requests.</param>
-        /// <param name="logger">The logger instance used for diagnostics.</param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="http"/> or <paramref name="logger"/> is null.
-        /// </exception>
-        public VectorMemoryProvider(HttpClient http, ILogger<VectorMemoryProvider> logger)
+        public VectorMemoryProvider(
+            HttpClient http,
+            ILogger<VectorMemoryProvider> logger,
+            IConfiguration configuration)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _modelName = configuration["Kernel:Memory:EmbeddingModel"];
+            if (string.IsNullOrWhiteSpace(_modelName))
+                _modelName = DefaultModel;
+
+            _logger.LogInformation("[Vector] Using embedding model '{Model}'", _modelName);
         }
 
-        /// <summary>
-        /// Generates an embedding vector for the given text input.
-        /// </summary>
-        /// <param name="text">The text to embed.</param>
-        /// <param name="ct">A cancellation token for the asynchronous operation.</param>
-        /// <returns>An <see cref="Embedding"/> representing the generated vector.</returns>
         public async Task<Embedding> EmbedAsync(string text, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(text))
                 throw new ArgumentException("Input text cannot be null or empty.", nameof(text));
 
-            _logger.LogDebug("[Vector] Requesting embedding for input of length {Length}", text.Length);
+            _logger.LogDebug("[Vector] Requesting embedding for input length {Length}", text.Length);
 
-            var payload = new { input = text, model = "text-embedding-3-large" };
+            var payload = new { input = text, model = _modelName };
 
-            var response = await _http.PostAsJsonAsync("/embeddings", payload, ct)
-                                      .ConfigureAwait(false);
+            using var response = await _http.PostAsJsonAsync("/embeddings", payload, ct)
+                                            .ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
 
@@ -63,23 +60,18 @@ namespace ArchenaAI.Common.Semantic.Kernel.Memory
             var embedding = new Embedding
             {
                 SourceText = text,
-                Vector = vector,
+                Vector = vector,                 // <-- IReadOnlyList<float>
                 Model = payload.model,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
-            _logger.LogInformation("[Vector] Generated {Dim}-dimensional embedding.", embedding.Vector.ToArray().Length);
+            _logger.LogInformation("[Vector] Generated {Dim}-D embedding.", embedding.Vector.Count);
             return embedding;
         }
 
-        /// <summary>
-        /// Stores a memory record in the in-memory vector store.
-        /// </summary>
-        /// <param name="record">The record to store.</param>
-        /// <param name="ct">A cancellation token for the asynchronous operation.</param>
         public Task StoreAsync(MemoryRecord record, CancellationToken ct)
         {
-            if (record == null)
+            if (record is null)
                 throw new ArgumentNullException(nameof(record));
 
             _logger.LogDebug("[Vector] Storing record '{Id}'", record.Id);
@@ -87,68 +79,93 @@ namespace ArchenaAI.Common.Semantic.Kernel.Memory
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Performs a cosine similarity search across stored embeddings.
-        /// </summary>
-        /// <param name="query">The text query to embed and search for.</param>
-        /// <param name="limit">The maximum number of results to return.</param>
-        /// <param name="ct">A cancellation token for the asynchronous operation.</param>
-        /// <returns>A collection of matching <see cref="MemoryRecord"/>s sorted by similarity.</returns>
         public async Task<IEnumerable<MemoryRecord>> SearchAsync(string query, int limit, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(query))
                 return Enumerable.Empty<MemoryRecord>();
 
+            if (_store.IsEmpty)
+                return Enumerable.Empty<MemoryRecord>();
+
             var queryEmbedding = await EmbedAsync(query, ct).ConfigureAwait(false);
+
+            var queryVec = queryEmbedding.Vector?.ToArray() ?? Array.Empty<float>();
 
             var results = _store.Values
                 .Select(r =>
                 {
-                    var a = r.Embedding ?? Array.Empty<float>();
-                    var b = queryEmbedding.Vector ?? Array.Empty<float>();
-                    r.Similarity = CosineSimilarity(a.ToArray(), b.ToArray());
+                    var a = r.Embedding?.ToArray() ?? Array.Empty<float>();
+                    var similarity = CosineSimilarity(a, queryVec);
+                    r.Similarity = similarity;
                     return r;
                 })
-                .OrderByDescending(r => r.Similarity)
+                .OrderByDescending(r => r.Similarity ?? 0f)
                 .Take(limit)
                 .ToList();
 
-            _logger.LogInformation("[Vector] Search completed — {Count} matches for '{Query}'", results.Count, query);
             return results;
         }
 
-        /// <summary>
-        /// Deletes a vector from the in-memory store.
-        /// </summary>
-        /// <param name="id">The ID of the embedding to delete.</param>
-        /// <param name="ct">A cancellation token for the asynchronous operation.</param>
         public Task DeleteAsync(string id, CancellationToken ct)
         {
-            _logger.LogDebug("[Vector] Deleting embedding with id {Id}", id);
-            _store.Remove(id);
+            _store.TryRemove(id, out _);
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Computes cosine similarity between two embedding vectors.
-        /// </summary>
-        /// <param name="a">The first vector.</param>
-        /// <param name="b">The second vector.</param>
-        /// <returns>A similarity score between 0 and 1.</returns>
         private static float CosineSimilarity(float[] a, float[] b)
         {
             if (a == null || b == null || a.Length == 0 || b.Length == 0 || a.Length != b.Length)
                 return 0f;
 
-            float dot = 0, magA = 0, magB = 0;
-            for (int i = 0; i < a.Length; i++)
+            // SIMD path
+            if (Vector.IsHardwareAccelerated && a.Length >= Vector<float>.Count)
             {
-                dot += a[i] * b[i];
-                magA += a[i] * a[i];
-                magB += b[i] * b[i];
+                int i = 0;
+                var dotVec = Vector<float>.Zero;
+                var magAVec = Vector<float>.Zero;
+                var magBVec = Vector<float>.Zero;
+
+                int simdLen = a.Length - (a.Length % Vector<float>.Count);
+
+                for (; i < simdLen; i += Vector<float>.Count)
+                {
+                    var va = new Vector<float>(a, i);
+                    var vb = new Vector<float>(b, i);
+
+                    dotVec += va * vb;
+                    magAVec += va * va;
+                    magBVec += vb * vb;
+                }
+
+                float dot = 0, magA = 0, magB = 0;
+
+                for (int j = 0; j < Vector<float>.Count; j++)
+                {
+                    dot += dotVec[j];
+                    magA += magAVec[j];
+                    magB += magBVec[j];
+                }
+
+                for (; i < a.Length; i++)
+                {
+                    dot += a[i] * b[i];
+                    magA += a[i] * a[i];
+                    magB += b[i] * b[i];
+                }
+
+                return dot / ((float)Math.Sqrt(magA) * (float)Math.Sqrt(magB) + 1e-9f);
             }
 
-            return dot / ((float)Math.Sqrt(magA) * (float)Math.Sqrt(magB) + 1e-9f);
+            // Scalar fallback
+            float dotScalar = 0, magAScalar = 0, magBScalar = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                dotScalar += a[i] * b[i];
+                magAScalar += a[i] * a[i];
+                magBScalar += b[i] * b[i];
+            }
+
+            return dotScalar / ((float)Math.Sqrt(magAScalar) * (float)Math.Sqrt(magBScalar) + 1e-9f);
         }
     }
 }
