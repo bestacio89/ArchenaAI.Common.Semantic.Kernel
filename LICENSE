@@ -1,0 +1,65 @@
+# Archena AI Proprietary License
+
+**Copyright © 2026 Bernardo Estacio Abreu. All Rights Reserved.**
+
+## 1. Ownership
+
+Archena AI, including its source code, architecture, orchestration logic, AI agents, prompts, workflows, memory systems, documentation, algorithms, configuration, and all related materials (collectively, the "Software"), is the exclusive intellectual property of Bernardo Estacio Abreu.
+
+All rights not expressly granted under this License are reserved.
+
+---
+
+## 2. Permitted Use
+
+You may:
+
+* View the source code through the official repository.
+* Clone or download the repository solely for evaluation, educational review, security analysis, or professional portfolio assessment.
+* Reference limited portions of the source code when discussing or reviewing the Software, provided appropriate attribution is maintained.
+
+---
+
+## 3. Restrictions
+
+Without prior written authorization from the copyright holder, you may not:
+
+* Copy, reproduce, or reuse substantial portions of the Software.
+* Modify the Software for redistribution.
+* Redistribute, sublicense, publish, or mirror the Software.
+* Commercialize or otherwise exploit the Software or any derivative work.
+* Incorporate any portion of the Software into another software product or service.
+* Offer the Software through a hosted, managed, or Software-as-a-Service (SaaS) platform.
+* Remove or modify copyright notices.
+* Use the Software or its architecture, prompts, workflows, memory systems, or source code to build competing products.
+* Use any portion of the Software or its contents for training, fine-tuning, benchmarking, or improving machine learning or artificial intelligence models without prior written permission.
+
+---
+
+## 4. Contributions
+
+Unless otherwise agreed in writing, any contribution submitted to this repository may be incorporated into the Software by the copyright holder without transferring ownership of the Software.
+
+---
+
+## 5. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, OR NON-INFRINGEMENT.
+
+---
+
+## 6. Limitation of Liability
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
+
+---
+
+## 7. Commercial Licensing
+
+Commercial licensing, OEM licensing, enterprise agreements, and partnership opportunities are available upon request from the copyright holder.
+
+---
+
+## 8. Acceptance
+
+By accessing, cloning, downloading, or otherwise using this repository, you acknowledge that you have read and agree to the terms of this License.
