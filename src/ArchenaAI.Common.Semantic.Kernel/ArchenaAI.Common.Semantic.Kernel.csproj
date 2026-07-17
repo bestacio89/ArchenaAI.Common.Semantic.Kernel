@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- 🧩 Centralized configuration -->
-  <Import Project="$(MSBuildThisFileDirectory)build/version.props" Condition="Exists('$(MSBuildThisFileDirectory)build/version.props')" />
-  <Import Project="$(MSBuildThisFileDirectory)build/Directory.Build.Props" Condition="Exists('$(MSBuildThisFileDirectory)build/Directory.Build.Props')" />
+  <Import Project="..\..\Common.targets" />
 
 
   <PropertyGroup>

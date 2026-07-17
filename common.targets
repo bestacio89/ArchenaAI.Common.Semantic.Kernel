@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- ============================================================
+       Shared Build Configuration for ArchenaAI.Common Modules
+       Import in each project using:
+       <Import Project="..\..\build\Common.targets" />
+       ============================================================ -->
+
+  <PropertyGroup>
+    <!-- Core Build Settings -->
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Versioning (manually bump or automate later) -->
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0</AssemblyVersion>
+    <FileVersion>0.1.0</FileVersion>
+
+    <!-- Author Info -->
+    <Authors>Bernardo Estacio Abreu</Authors>
+    <Company>ArchenaAI Project</Company>
+
+    <!-- Documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Deterministic Builds -->
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+
+  <!-- ============================================================
+       NuGet Package Metadata
+       ============================================================ -->
+  <PropertyGroup>
+    <PackageId>$(MSBuildProjectName)</PackageId>
+
+    <!-- Replace this per-project if needed -->
+    <Description>Core module of the ArchenaAI.Common framework.</Description>
+
+    <Copyright>
+      Copyright © 2025 Bernardo Estacio Abreu
+    </Copyright>
+
+    <RepositoryUrl>
+      https://github.com/bestacio89/ArchenaAI.Common
+    </RepositoryUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+    <RepositoryCommit>$(SourceRevisionId)</RepositoryCommit>
+
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <PackageTags>
+      ArchenaAI;AI;Semantic;Kernel;Runtime;Orchestration;Agents;Framework
+    </PackageTags>
+
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Enable NuGet packing -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+
+  <!-- ============================================================
+       Include README.md in the NuGet package if present
+       ============================================================ -->
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)\README.md')">
+    <None Include="$(MSBuildProjectDirectory)\README.md"
+          Pack="true"
+          PackagePath="" />
+  </ItemGroup>
+
+</Project>

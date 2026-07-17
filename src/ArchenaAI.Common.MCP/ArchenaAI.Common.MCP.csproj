@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Common.targets" />
+
+  <ItemGroup>
+    <Reference Include="Aegis.Shared">
+      <HintPath>..\..\..\..\Aegis\sources\Aegis.Shared\obj\Debug\net10.0\Aegis.Shared.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
